@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --mail-user=abarlow505@gmail.com
+#SBATCH --mail-user=barlowat@ornl.gov
 #SBATCH --mail-type=ALL
 #SBATCH -A STF040
 #SBATCH -J ROCM-GPU-CHECK
@@ -15,3 +15,9 @@ CORES=56
 CMD="python test.py"
 
 srun --gpus-per-node=${GPUS} -c${CORES} --ntasks-per-node=1 ${CMD}
+
+# Run with
+# sbatch test_batch_script.sl
+
+# View with
+# squeue -l -u aroswift
