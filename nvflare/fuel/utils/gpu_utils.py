@@ -148,7 +148,7 @@ def get_host_gpu_ids() -> List[str]:
 
 def get_host_gpu_memory_free(unit="MiB") -> List:
     if AMD_GPU:
-        return get_amd_gpu_host_ids()
+        return get_amd_gpu_memory_free()
     else:
         return get_nvidia_host_gpu_memory_free(unit=unit)
 
