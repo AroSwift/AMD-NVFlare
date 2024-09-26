@@ -142,18 +142,27 @@ def get_amd_gpu_memory_free() -> List[int]:
 
 def get_host_gpu_ids() -> List[str]:
     if AMD_GPU:
-        return get_amd_host_ids()
+        # debugging statements
+        amd_gpu_host_ids = get_amd_gpu_host_ids()
+        print("get_host_gpu_ids: ", amd_gpu_host_ids)
+        return amd_gpu_host_ids
     else:
         return get_nvida_host_gpu_ids()
 
 def get_host_gpu_memory_free(unit="MiB") -> List:
     if AMD_GPU:
-        return get_amd_gpu_memory_free()
+        # debugging statements
+        amd_host_gpu_memory_free = get_amd_gpu_memory_free()
+        print("get_host_gpu_memory_free: ", amd_host_gpu_memory_free)
+        return amd_host_gpu_memory_free
     else:
         return get_nvidia_host_gpu_memory_free(unit=unit)
 
 def get_host_gpu_memory_total() -> List[str]:
     if AMD_GPU:
-        return get_amd_gpu_memory_total()
+        # debugging statements
+        amd_gpu_memory_total = get_amd_gpu_memory_total()
+        print("get_host_gpu_memory_total:", amd_gpu_memory_total)
+        return amd_gpu_memory_total
     else:
         return get_nvidia_host_gpu_memory_total()

@@ -4,45 +4,51 @@
 #SBATCH -A STF040
 #SBATCH -J AMD-NVFLARE-SIMULATOR
 #SBATCH -o %x-%j.out
-#SBATCH -t 00:15:00
+#SBATCH -t 01:00:00
 #SBATCH -p batch
 #SBATCH -N 1
 #SBATCH -q debug
 
+GPUS=8
+CORES=56
+
 hostname
-# module load PrgEnv-gnu/8.3.3
+
 module load PrgEnv-gnu/8.5.0
-# module load miniforge3/24.3.0-0
 module load miniforge3/23.11.0-0
 module load PrgEnv-cray
-# module load cpe/23.09
 module load rocm/5.5.1
 
-# export PYTHONPATH=${PWD}/..
+export PYTHONPATH=${PWD}/..
 
-conda init
+cd ~
+
+conda init bash
 conda activate python3-10-11
 
 
 cd /lustre/orion/stf040/scratch/aroswift/AMD-NVFlare
-
-
-# export PYTHONPATH="/lustre/orion/stf040/scratch/aroswift/envs/python3-10-11/bin/python"
-# ${PWD}/..
-
-# conda config --append envs_dirs /lustre/orion/stf040/scratch/aroswift/AMD-NVFlare
-# conda config --append envs_dirs /lustre/orion/stf040/scratch/aroswift/envs
-# source activate base
 pip install -r requirements.txt
 
 cd /lustre/orion/stf040/scratch/aroswift/AMD-NVFlare/examples/advanced/cifar10/cifar10-sim
 pip install -r requirements.txt
 
+# bash prepare_data.sh
+
+
 
 export PYTHONPATH=${PWD}/..
 CUDA_VISIBLE_DEVICES=
+HIP_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 
-./run_simulator.sh cifar10_central 0.0 1 1
+echo $CUDA_VISIBLE_DEVICES
+
+echo $HIP_VISIBLE_DEVICES
+
+echo $PATH
+
+# ./run_simulator.sh cifar10_central 0.0 1 1
+srun --gpus-per-node=${GPUS} -c${CORES} --ntasks-per-node=1 /lustre/orion/stf040/scratch/aroswift/AMD-NVFlare/examples/advanced/cifar10/cifar10-sim/run_simulator_with_gpus.sh cifar10_central 0.0 1 1
 
 # Run with
 # sbatch test_simulator_with_gpus_batch_script.sl
