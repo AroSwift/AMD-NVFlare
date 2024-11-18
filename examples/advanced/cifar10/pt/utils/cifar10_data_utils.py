@@ -40,7 +40,8 @@
 import numpy as np
 import torchvision.datasets as datasets
 
-CIFAR10_ROOT = "/tmp/cifar10"  # will be used for all CIFAR-10 experiments
+# CIFAR10_ROOT = "/tmp/cifar10"  # will be used for all CIFAR-10 experiments
+CIFAR10_ROOT = "/lustre/orion/stf040/scratch/aroswift/cifar10"
 
 
 def load_cifar10_data():

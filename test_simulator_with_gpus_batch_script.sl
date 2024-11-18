@@ -4,7 +4,7 @@
 #SBATCH -A STF040
 #SBATCH -J AMD-NVFLARE-SIMULATOR
 #SBATCH -o %x-%j.out
-#SBATCH -t 01:00:00
+#SBATCH -t 1:00:00
 #SBATCH -p batch
 #SBATCH -N 1
 #SBATCH -q debug
@@ -12,28 +12,41 @@
 GPUS=8
 CORES=56
 
-hostname
+# hostname
 
-module load PrgEnv-gnu/8.5.0
-module load miniforge3/23.11.0-0
-module load PrgEnv-cray
-module load rocm/5.5.1
+# module load PrgEnv-gnu/8.5.0
+# module load miniforge3/23.11.0-0
+# module load PrgEnv-cray
+# module load rocm/5.5.1
 
-export PYTHONPATH=${PWD}/..
+# # export PYTHONPATH=${PWD}/..
+# export PYTHONPATH=${PYTHONPATH}:/lustre/orion/stf040/scratch/aroswift/AMD-NVFlare
 
-cd ~
+# cd ~
 
-conda init bash
+# # conda init bash
+# conda init
+# conda activate python3-10-11
+
+
+# cd /lustre/orion/stf040/scratch/aroswift/AMD-NVFlare
+# pip install -r requirements.txt
+# pip install .
+
+# cd /lustre/orion/stf040/scratch/aroswift/AMD-NVFlare/examples/advanced/cifar10/cifar10-sim
+# pip install -r requirements.txt
+
+# bash ./prepare_data.sh
+
+# # bash prepare_data.sh
+
+
+# new attempts:
+# Initialize Conda for the current shell
+source /sw/frontier/miniforge3/23.11.0-0/etc/profile.d/conda.sh
+
+# Activate the desired Conda environment
 conda activate python3-10-11
-
-
-cd /lustre/orion/stf040/scratch/aroswift/AMD-NVFlare
-pip install -r requirements.txt
-
-cd /lustre/orion/stf040/scratch/aroswift/AMD-NVFlare/examples/advanced/cifar10/cifar10-sim
-pip install -r requirements.txt
-
-# bash prepare_data.sh
 
 
 
@@ -48,7 +61,7 @@ echo $HIP_VISIBLE_DEVICES
 echo $PATH
 
 # ./run_simulator.sh cifar10_central 0.0 1 1
-srun --gpus-per-node=${GPUS} -c${CORES} --ntasks-per-node=1 /lustre/orion/stf040/scratch/aroswift/AMD-NVFlare/examples/advanced/cifar10/cifar10-sim/run_simulator_with_gpus.sh cifar10_central 0.0 1 1
+srun --gpus-per-node=${GPUS} -c${CORES} --ntasks-per-node=1 /lustre/orion/stf040/scratch/aroswift/AMD-NVFlare/examples/advanced/cifar10/cifar10-sim/run_simulator_with_gpus.sh cifar10_central 0.0 1 8
 
 # Run with
 # sbatch test_simulator_with_gpus_batch_script.sl

@@ -1,31 +1,19 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 import subprocess
 from typing import List, Dict, Optional
 from shutil import which
 import json
+import os
 
+# Make AMD_GPU an environment variable that can be pulled
+# Default to False if the environment variable is not set
+AMD_GPU = os.getenv('AMD_GPU', 'False').lower() in ('true', '1', 't')
 
-# TODO: convert this to some form of env var or config setting
-AMD_GPU = True
-
+print('MY CUSTOM CODE HERE! Updated 0.2')
+print(AMD_GPU)
 
 # Nvidia GPU-Specific Utils
 
 def has_nvidia_smi() -> bool:
-    from shutil import which
-
     return which("nvidia-smi") is not None
 
 def use_nvidia_smi(query: str, report_format: str = "csv"):
@@ -42,7 +30,7 @@ def use_nvidia_smi(query: str, report_format: str = "csv"):
             return result.stdout.splitlines()
     return None
 
-def _parse_gpu_mem(result: str = None, unit: str = "MiB") -> List:
+def _parse_gpu_mem(result: List[str] = None, unit: str = "MiB") -> List[int]:
     gpu_memory = []
     if result:
         for i in result[1:]:
@@ -52,15 +40,15 @@ def _parse_gpu_mem(result: str = None, unit: str = "MiB") -> List:
             gpu_memory.append(int(mem))
     return gpu_memory
 
-def get_nvidia_host_gpu_memory_total(unit="MiB") -> List:
+def get_nvidia_host_gpu_memory_total(unit="MiB") -> List[int]:
     result = use_nvidia_smi("memory.total")
     return _parse_gpu_mem(result, unit)
 
-def get_nvidia_host_gpu_memory_free(unit="MiB") -> List:
+def get_nvidia_host_gpu_memory_free(unit="MiB") -> List[int]:
     result = use_nvidia_smi("memory.free")
     return _parse_gpu_mem(result, unit)
 
-def get_nvida_host_gpu_ids() -> List:
+def get_nvidia_host_gpu_ids() -> List[int]:
     """Gets GPU IDs.
 
     Note:
@@ -74,7 +62,6 @@ def get_nvida_host_gpu_ids() -> List:
     return gpu_ids
 
 
-
 # AMD GPU-Specific Utils
 
 def run_command(command: List[str]) -> Optional[str]:
@@ -86,16 +73,24 @@ def run_command(command: List[str]) -> Optional[str]:
         return result.stdout
     return None
 
-def get_amd_gpu_host_ids() -> List[str]:
-    # Returns an array of host IDs using `rocm-smi --showmeminfo vram --json`
+def get_amd_gpu_host_ids() -> List[int]:
+    # Returns an array of host IDs as integers using `rocm-smi --showmeminfo vram --json`
     result = run_command(["rocm-smi", "--showmeminfo", "vram", "--json"])
     host_ids = []
 
     if result:
         try:
             gpu_data = json.loads(result)
-            # Extract the keys from the JSON object. E.g. 'card0', 'card1', ...
-            host_ids = list(gpu_data.keys())
+            # Extract numerical IDs from keys like 'card0', 'card1', etc.
+            for key in gpu_data.keys():
+                if key.startswith('card'):
+                    try:
+                        gpu_id = int(key.replace('card', ''))
+                        host_ids.append(gpu_id)
+                    except ValueError:
+                        print(f"Unexpected GPU key format: {key}")
+                else:
+                    print(f"Unexpected GPU key format: {key}")
         except json.JSONDecodeError as e:
             print(f"JSON parsing error: {e}")
             print(f"Output was: {result}")
@@ -114,11 +109,14 @@ def get_amd_gpu_memory_info() -> Dict[str, List[int]]:
         try:
             gpu_data = json.loads(result)
             for gpu_id, gpu in gpu_data.items():
-                total_mem = int(gpu.get("VRAM Total Memory (B)", 0)) // (1024 * 1024)  # Convert bytes to MiB
-                used_mem = int(gpu.get("VRAM Total Used Memory (B)", 0)) // (1024 * 1024)  # Convert bytes to MiB
-                free_mem = total_mem - used_mem
-                memory_info["total"].append(total_mem)
-                memory_info["free"].append(free_mem)
+                try:
+                    total_mem = int(gpu.get("VRAM Total Memory (B)", 0)) // (1024 * 1024)  # Convert bytes to MiB
+                    used_mem = int(gpu.get("VRAM Used Memory (B)", 0)) // (1024 * 1024)  # Adjusted key to "VRAM Used Memory (B)"
+                    free_mem = total_mem - used_mem
+                    memory_info["total"].append(total_mem)
+                    memory_info["free"].append(free_mem)
+                except (ValueError, TypeError) as e:
+                    print(f"Error parsing memory for GPU {gpu_id}: {e}")
         except json.JSONDecodeError as e:
             print(f"JSON parsing error: {e}")
             print(f"Output was: {result}")
@@ -137,30 +135,35 @@ def get_amd_gpu_memory_free() -> List[int]:
     return memory_info["free"]
 
 
+# Usable Interface
 
-# Usable 
-
-def get_host_gpu_ids() -> List[str]:
+def get_host_gpu_ids() -> List[int]:
+    print('get_host_gpu_ids...')
+    print(AMD_GPU)
     if AMD_GPU:
-        # debugging statements
+        # Debugging statements
         amd_gpu_host_ids = get_amd_gpu_host_ids()
         print("get_host_gpu_ids: ", amd_gpu_host_ids)
-        return amd_gpu_host_ids
+        return amd_gpu_host_ids  # Added return statement
     else:
-        return get_nvida_host_gpu_ids()
+        return get_nvidia_host_gpu_ids()
 
-def get_host_gpu_memory_free(unit="MiB") -> List:
+def get_host_gpu_memory_free(unit="MiB") -> List[int]:
+    print('get_host_gpu_memory_free...')
+    print(AMD_GPU)
     if AMD_GPU:
-        # debugging statements
+        # Debugging statements
         amd_host_gpu_memory_free = get_amd_gpu_memory_free()
         print("get_host_gpu_memory_free: ", amd_host_gpu_memory_free)
         return amd_host_gpu_memory_free
     else:
         return get_nvidia_host_gpu_memory_free(unit=unit)
 
-def get_host_gpu_memory_total() -> List[str]:
+def get_host_gpu_memory_total() -> List[int]:
+    print('get_host_gpu_memory_total...')
+    print(AMD_GPU)
     if AMD_GPU:
-        # debugging statements
+        # Debugging statements
         amd_gpu_memory_total = get_amd_gpu_memory_total()
         print("get_host_gpu_memory_total:", amd_gpu_memory_total)
         return amd_gpu_memory_total
